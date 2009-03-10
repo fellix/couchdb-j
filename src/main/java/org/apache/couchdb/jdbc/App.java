@@ -20,8 +20,10 @@ public class App
             Connection con = DriverManager.getConnection("jdbc:couchdb://127.0.0.1:5984");
             Statement smt = con.createStatement();
             ResultSet rs = smt.executeQuery("/test/Users/");
+            System.out.println(rs.getString("teste"));
             rs.updateString("teste", "Editando propriedades via JDBC");
             System.out.println(rs.getString("name"));
+            System.out.println(rs.getString("teste"));
         } catch (ClassNotFoundException ex) {
             ex.printStackTrace();
         } catch (SQLException ex) {

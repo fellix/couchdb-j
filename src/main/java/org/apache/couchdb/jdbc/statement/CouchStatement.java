@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package org.apache.couchdb.jdbc.statement;
 
 import java.io.IOException;
@@ -13,33 +12,68 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import org.apache.couchdb.jdbc.resultset.CouchResultSet;
 import org.apache.couchdb.jdbc.util.CouchDBHttp;
+import org.apache.http.Header;
 import org.apache.http.HttpClientConnection;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
+import org.apache.http.entity.BasicHttpEntity;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpRequest;
+import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HttpRequestExecutor;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
 
 /**
- *
- * @author root
+ * CouchDB Statement implementation
+ * @author Rafael Felix da Silva
  * @version 1.0
  */
-public class CouchStatement implements Statement{
+public class CouchStatement implements Statement {
 
     private HttpClientConnection connection;
     private CouchDBHttp http = CouchDBHttp.getInstance();
     private ResultSet resultSet;
 
-    public CouchStatement(HttpClientConnection connection){
+    /**
+     * Defaults constructor
+     * @param connection the active connection
+     * @since 1.0
+     */
+    public CouchStatement(HttpClientConnection connection) {
         this.connection = connection;
     }
 
-    private HttpResponse executeHttp(String method, String sql) throws SQLException{
-        sql = "/"+http.getDatabase()+"/"+sql;
+    /**
+     * Execute an HTTP method.
+     * @param method the method
+     * @param sql the string to execute
+     * @return Response of the server
+     * @throws java.sql.SQLException
+     * @see CouchDBHttp
+     * @since 1.0
+     */
+    private HttpResponse executeHttp(String method, String sql) throws SQLException {
+        return executeHttp(method, sql, false);
+    }
+
+    /**
+     * Execute an HTTP Metodo using an entity
+     * @param method
+     * @param sql
+     * @param entity
+     * @return
+     * @throws java.sql.SQLException
+     */
+    private HttpResponse executeHttp(String method, String sql, boolean sender) throws SQLException {
         HttpRequest request = new BasicHttpRequest(method, sql);
         request.setParams(http.getDefaultParams());
+        if(sender){
+            request.addHeader(new BasicHeader("teste", "editado"));
+        }
         HttpRequestExecutor executor = new HttpRequestExecutor();
         try {
             executor.preProcess(request, http.getDefaultProcessor(), http.getDefaultContext());
@@ -54,7 +88,14 @@ public class CouchStatement implements Statement{
         }
     }
 
-    //uma consulta é sempre GET
+    /**
+     * Make an query in the database.
+     * The queries is ever GET type
+     * @param sql the parameters to consult
+     * @return ResultSet of the query
+     * @throws java.sql.SQLException
+     * @since 1.0
+     */
     public ResultSet executeQuery(String sql) throws SQLException {
         HttpRequestExecutor executor = new HttpRequestExecutor();
         try {
@@ -70,11 +111,24 @@ public class CouchStatement implements Statement{
         }
     }
 
+    /**
+     * Execute an update to the couchDb.
+     * Update is POST method.<br />
+     * Usage:
+     * <pre>
+     *  /database/doc?key=value&key2=value2
+     * </pre>
+     * @param sql the update param
+     * @return the status code of the response
+     * @throws java.sql.SQLException
+     * @since 1.0
+     */
     public int executeUpdate(String sql) throws SQLException {
         HttpRequestExecutor executor = new HttpRequestExecutor();
         try {
-            HttpResponse response = executeHttp("PUT", sql);
+            HttpResponse response = executeHttp("POST", sql, true);
             response.setParams(http.getDefaultParams());
+            HttpEntity entity = new StringEntity("");
             executor.postProcess(response, http.getDefaultProcessor(), http.getDefaultContext());
             return response.getStatusLine().getStatusCode();
         } catch (HttpException ex) {
@@ -244,5 +298,4 @@ public class CouchStatement implements Statement{
     public boolean isWrapperFor(Class iface) throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
 }

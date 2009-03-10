@@ -51,7 +51,7 @@ public class CouchDBHttp {
     public void parseProperties(Properties properties){
         url = properties.getProperty("host");
         port = Integer.parseInt(properties.getProperty("port"));
-        database = properties.getProperty("database");
+        //database = properties.getProperty("database");
     }
     //Need to set the connection
     public HttpContext getDefaultContext() {
@@ -90,9 +90,9 @@ public class CouchDBHttp {
     public Socket getSocket() throws IOException{
         return new Socket(url, port);
     }
-
+/*
     public String getDatabase() {
         return database;
-    }
+    }*/
 
 }

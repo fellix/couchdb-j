@@ -43,7 +43,7 @@ public class CouchDriver implements Driver {
     }
 
     /**
-     * URL STRING jdbc:couchdb://host:port/database
+     * URL STRING jdbc:couchdb://host:port
      * @param url
      * @param info
      * @return
@@ -57,17 +57,9 @@ public class CouchDriver implements Driver {
         if (parts.length < 2) {
             return null;
         }
-        String[] portDb = parts[1].split("/");
-        if (portDb.length < 2) {
-            return null;
-        }
         Properties prop = new Properties(info);
-        System.out.println("host = "+parts[0]);
-        System.out.println("port = "+portDb[0]);
-        System.out.println("database = "+portDb[1]);
         prop.put("host", parts[0]);
-        prop.put("port", portDb[0]);
-        prop.put("database", portDb[1]);
+        prop.put("port", parts[1]);
         return prop;
     }
 

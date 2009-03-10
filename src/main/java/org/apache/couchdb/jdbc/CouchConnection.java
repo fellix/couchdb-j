@@ -5,7 +5,6 @@
 package org.apache.couchdb.jdbc;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.sql.Array;
 import java.sql.Blob;
@@ -27,23 +26,12 @@ import java.util.Properties;
 import org.apache.couchdb.jdbc.statement.CouchStatement;
 import org.apache.couchdb.jdbc.util.CouchDBHttp;
 import org.apache.http.HttpClientConnection;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpVersion;
 import org.apache.http.impl.DefaultHttpClientConnection;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.BasicHttpProcessor;
 import org.apache.http.protocol.ExecutionContext;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpRequestExecutor;
-import org.apache.http.protocol.RequestContent;
-import org.apache.http.protocol.RequestTargetHost;
 
 /**
- *
- * @author root
+ * CouchDB Connection Implementation
+ * @author Rafael Felix da Silva
  * @version 1.0
  */
 public class CouchConnection implements Connection {
@@ -56,6 +44,12 @@ public class CouchConnection implements Connection {
     private HttpClientConnection con;
     private Properties info;
 
+    /**
+     * Default constructor for the CouchDB Connection
+     * @param info the properties with info of the server
+     * @throws java.sql.SQLException
+     * @since 1.0
+     */
     public CouchConnection(Properties info) throws SQLException {
         DefaultHttpClientConnection d = new DefaultHttpClientConnection();
         CouchDBHttp http = CouchDBHttp.getInstance();
@@ -65,25 +59,19 @@ public class CouchConnection implements Connection {
 
             d.bind(http.getSocket(), http.getDefaultParams());
             con = d;
-            /*
-            HttpRequest request = new BasicHttpRequest("GET", "/" + info.getProperty("database") + "/");
-            request.setParams(params);
-            exe.preProcess(request, processor, context);
-            HttpResponse response = exe.execute(request, con, context);
-            response.setParams(params);
-            exe.postProcess(response, processor, context);
-
-            System.out.println("<< Response: " + response.getStatusLine());
-            System.out.println(EntityUtils.toString(response.getEntity()));
-            System.out.println("==============");
-            */
         } catch (UnknownHostException ex) {
             throw new SQLException(ex);
         } catch (IOException ex) {
             throw new SQLException(ex);
         }
     }
-
+    /**
+     * Creates a new Statment for CouchDB
+     * @return the new Statement
+     * @throws java.sql.SQLException
+     * @see CouchStatement
+     * @since 1.0
+     */
     public Statement createStatement() throws SQLException {
         return new CouchStatement(con);
     }
@@ -115,7 +103,12 @@ public class CouchConnection implements Connection {
     public void rollback() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
+    /**
+     * Closes the connection
+     * @throws java.sql.SQLException
+     * @see HttpClientConnection#close()
+     * @since 1.0
+     */
     public void close() throws SQLException {
         try {
             con.close();
@@ -128,21 +121,28 @@ public class CouchConnection implements Connection {
      * Verify if the connectios is closed
      * @return true case the connection is closed, false otherwise
      * @throws java.sql.SQLException
+     * @since 1.0
      */
     public boolean isClosed() throws SQLException {
         return closed;
     }
-
+    /**
+     * Returns the MetaData of this database
+     * @return DatabaseMetadata
+     * @throws java.sql.SQLException
+     * @see CouchDatabaseMetaData
+     * @since 1.0
+     */
     public DatabaseMetaData getMetaData() throws SQLException {
         return new CouchDatabaseMetaData(con, info);
     }
 
     public void setReadOnly(boolean readOnly) throws SQLException {
-        this.readOnly = readOnly;
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public boolean isReadOnly() throws SQLException {
-        return readOnly;
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public void setCatalog(String catalog) throws SQLException {

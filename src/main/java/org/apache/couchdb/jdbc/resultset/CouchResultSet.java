@@ -467,7 +467,8 @@ public class CouchResultSet implements ResultSet{
     public void updateString(String columnLabel, String x) throws SQLException {
         try {
             object.put(columnLabel, x);
-            
+            System.out.println(sql+columnLabel+"="+x);
+            smt.executeUpdate(sql);
         } catch (JSONException ex) {
             throw new SQLException(ex);
         }
