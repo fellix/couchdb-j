@@ -5,7 +5,6 @@
 package org.apache.couchdb.jdbc;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -23,11 +22,14 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.couchdb.jdbc.statement.CouchStatement;
-import org.apache.couchdb.jdbc.util.CouchDBHttp;
-import org.apache.http.HttpClientConnection;
-import org.apache.http.impl.DefaultHttpClientConnection;
-import org.apache.http.protocol.ExecutionContext;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * CouchDB Connection Implementation
@@ -41,8 +43,9 @@ public class CouchConnection implements Connection {
     private boolean autoCommit = false;
     private String baseUrl;
     private String catalog;
-    private HttpClientConnection con;
     private Properties info;
+    private HttpClient con;
+    private JSONObject serverInfo;
 
     /**
      * Default constructor for the CouchDB Connection
@@ -51,20 +54,26 @@ public class CouchConnection implements Connection {
      * @since 1.0
      */
     public CouchConnection(Properties info) throws SQLException {
-        DefaultHttpClientConnection d = new DefaultHttpClientConnection();
-        CouchDBHttp http = CouchDBHttp.getInstance();
+        baseUrl = "http://".concat(info.getProperty("host")).concat(":").concat(info.getProperty("port"));
+        con = new HttpClient();
+        HttpMethod getInfo = new GetMethod(baseUrl);
         try {
-            http.parseProperties(info);
-            http.getDefaultContext().setAttribute(ExecutionContext.HTTP_CONNECTION, d);
-
-            d.bind(http.getSocket(), http.getDefaultParams());
-            con = d;
-        } catch (UnknownHostException ex) {
+            int statusCode = con.executeMethod(getInfo);
+            if (statusCode != HttpStatus.SC_OK) {
+                throw new SQLException("Unable to stabilish the connection");
+            }
+            byte[] resp = getInfo.getResponseBody();
+            serverInfo = new JSONObject(new String(resp));
+        } catch (JSONException ex) {
+            throw new SQLException(ex);
+        } catch (HttpException ex) {
             throw new SQLException(ex);
         } catch (IOException ex) {
             throw new SQLException(ex);
         }
+
     }
+
     /**
      * Creates a new Statment for CouchDB
      * @return the new Statement
@@ -72,8 +81,9 @@ public class CouchConnection implements Connection {
      * @see CouchStatement
      * @since 1.0
      */
+    @Override
     public Statement createStatement() throws SQLException {
-        return new CouchStatement(con);
+        return new CouchStatement(baseUrl);
     }
 
     public PreparedStatement prepareStatement(String sql) throws SQLException {
@@ -103,29 +113,29 @@ public class CouchConnection implements Connection {
     public void rollback() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
     /**
      * Closes the connection
      * @throws java.sql.SQLException
-     * @see HttpClientConnection#close()
      * @since 1.0
      */
+    @Override
     public void close() throws SQLException {
-        try {
-            con.close();
-            closed = true;
-        } catch (IOException ex) {
-            throw new SQLException(ex);
-        }
+        con = null;
+        closed = true;
     }
+
     /**
      * Verify if the connectios is closed
      * @return true case the connection is closed, false otherwise
      * @throws java.sql.SQLException
      * @since 1.0
      */
+    @Override
     public boolean isClosed() throws SQLException {
         return closed;
     }
+
     /**
      * Returns the MetaData of this database
      * @return DatabaseMetadata
@@ -133,8 +143,9 @@ public class CouchConnection implements Connection {
      * @see CouchDatabaseMetaData
      * @since 1.0
      */
+    @Override
     public DatabaseMetaData getMetaData() throws SQLException {
-        return new CouchDatabaseMetaData(con, info);
+        return new CouchDatabaseMetaData(serverInfo, baseUrl);
     }
 
     public void setReadOnly(boolean readOnly) throws SQLException {

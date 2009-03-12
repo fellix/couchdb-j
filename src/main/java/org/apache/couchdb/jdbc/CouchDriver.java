@@ -26,6 +26,7 @@ public class CouchDriver implements Driver {
         }
     }
 
+    @Override
     public Connection connect(String url, Properties info) throws SQLException {
         Properties defaults = new Properties();
         if ((defaults = parseUrl(url, info)) == null) {
@@ -34,10 +35,12 @@ public class CouchDriver implements Driver {
         return new CouchConnection(defaults);
     }
 
+    @Override
     public boolean acceptsURL(String url) throws SQLException {
         return parseUrl(url, null) != null;
     }
 
+    @Override
     public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }

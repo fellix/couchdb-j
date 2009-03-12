@@ -10,21 +10,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.couchdb.jdbc.resultset.CouchResultSet;
-import org.apache.couchdb.jdbc.util.CouchDBHttp;
-import org.apache.http.Header;
-import org.apache.http.HttpClientConnection;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.entity.BasicHttpEntity;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.message.BasicHttpRequest;
-import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.HttpRequestExecutor;
-import org.apache.http.util.EntityUtils;
+import org.apache.couchdb.jdbc.util.Converter;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -34,17 +29,18 @@ import org.json.JSONObject;
  */
 public class CouchStatement implements Statement {
 
-    private HttpClientConnection connection;
-    private CouchDBHttp http = CouchDBHttp.getInstance();
+    protected String url;
     private ResultSet resultSet;
+    private HttpClient con;
 
     /**
      * Defaults constructor
      * @param connection the active connection
      * @since 1.0
      */
-    public CouchStatement(HttpClientConnection connection) {
-        this.connection = connection;
+    public CouchStatement(String url) {
+        con = new HttpClient();
+        this.url = url;
     }
 
     /**
@@ -55,9 +51,9 @@ public class CouchStatement implements Statement {
      * @throws java.sql.SQLException
      * @see CouchDBHttp
      * @since 1.0
-     */
+     *
     private HttpResponse executeHttp(String method, String sql) throws SQLException {
-        return executeHttp(method, sql, false);
+    return executeHttp(method, sql, false);
     }
 
     /**
@@ -67,25 +63,25 @@ public class CouchStatement implements Statement {
      * @param entity
      * @return
      * @throws java.sql.SQLException
-     */
+     *
     private HttpResponse executeHttp(String method, String sql, boolean sender) throws SQLException {
-        HttpRequest request = new BasicHttpRequest(method, sql);
-        request.setParams(http.getDefaultParams());
-        if(sender){
-            request.addHeader(new BasicHeader("teste", "editado"));
-        }
-        HttpRequestExecutor executor = new HttpRequestExecutor();
-        try {
-            executor.preProcess(request, http.getDefaultProcessor(), http.getDefaultContext());
-            HttpResponse response = executor.execute(request, connection, http.getDefaultContext());
-            response.setParams(http.getDefaultParams());
-            executor = null;
-            return response;
-        } catch (HttpException ex) {
-            throw new SQLException(ex);
-        } catch (IOException ex) {
-            throw new SQLException(ex);
-        }
+    HttpRequest request = new BasicHttpRequest(method, sql);
+    request.setParams(http.getDefaultParams());
+    if(sender){
+    request.addHeader(new BasicHeader("teste", "editado"));
+    }
+    HttpRequestExecutor executor = new HttpRequestExecutor();
+    try {
+    executor.preProcess(request, http.getDefaultProcessor(), http.getDefaultContext());
+    HttpResponse response = executor.execute(request, connection, http.getDefaultContext());
+    response.setParams(http.getDefaultParams());
+    executor = null;
+    return response;
+    } catch (HttpException ex) {
+    throw new SQLException(ex);
+    } catch (IOException ex) {
+    throw new SQLException(ex);
+    }
     }
 
     /**
@@ -96,14 +92,31 @@ public class CouchStatement implements Statement {
      * @throws java.sql.SQLException
      * @since 1.0
      */
+    @Override
     public ResultSet executeQuery(String sql) throws SQLException {
-        HttpRequestExecutor executor = new HttpRequestExecutor();
+        if (con == null) {
+            throw new SQLException("Not connected");
+        }
+        return new CouchResultSet(new String(processGet(sql)), this, sql, url);
+
+    }
+
+    /**
+     * Process an get request to the server
+     * @param sql the params to get
+     * @return byte array of response
+     * @throws java.sql.SQLException
+     * @since 1.0
+     */
+    private byte[] processGet(String sql) throws SQLException {
+        HttpMethod method = new GetMethod(url + sql);
         try {
-            HttpResponse response = executeHttp("GET", sql);
-            response.setParams(http.getDefaultParams());
-            executor.postProcess(response, http.getDefaultProcessor(), http.getDefaultContext());
-            resultSet = new CouchResultSet(EntityUtils.toString(response.getEntity()), this, sql);
-            return resultSet;
+            int statusCode = con.executeMethod(method);
+            if (statusCode != HttpStatus.SC_OK) {
+                throw new SQLException("Invalid request!");
+            }
+            byte[] response = method.getResponseBody();
+            return response;
         } catch (HttpException ex) {
             throw new SQLException(ex);
         } catch (IOException ex) {
@@ -116,25 +129,47 @@ public class CouchStatement implements Statement {
      * Update is POST method.<br />
      * Usage:
      * <pre>
-     *  /database/doc?key=value&key2=value2
+     *  /database/doc#key=value&key2=value2
      * </pre>
      * @param sql the update param
      * @return the status code of the response
      * @throws java.sql.SQLException
      * @since 1.0
      */
+    @Override
     public int executeUpdate(String sql) throws SQLException {
-        HttpRequestExecutor executor = new HttpRequestExecutor();
+        if (!sql.contains("#")) {
+            throw new SQLException("Couldn't update with no parameters");
+        }
+        String[] splited = sql.split("#");
+        //Gets the /database/doc
+        String base = splited[0];
+        byte[] response = processGet(base);
         try {
-            HttpResponse response = executeHttp("POST", sql, true);
-            response.setParams(http.getDefaultParams());
-            HttpEntity entity = new StringEntity("");
-            executor.postProcess(response, http.getDefaultProcessor(), http.getDefaultContext());
-            return response.getStatusLine().getStatusCode();
-        } catch (HttpException ex) {
+            JSONObject obj = new JSONObject(new String(response));
+            //Sttrips the params to find the key and the value
+            stripParams(splited[1], obj);
+            PutMethod post = new PutMethod(url.concat(base));
+            post.setQueryString(Converter.jsonToNameValuePair(obj));
+            int status = con.executeMethod(post);
+            if(status != HttpStatus.SC_OK){
+                throw new SQLException("Failed to update the object. Error Code: "+status);
+            }
+            return status;
+        }catch (HttpException ex) {
             throw new SQLException(ex);
-        } catch (IOException ex) {
+        }catch (IOException ex) {
             throw new SQLException(ex);
+        } catch (JSONException ex) {
+            throw new SQLException(ex);
+        }
+    }
+
+    private void stripParams(String params, JSONObject obj) throws JSONException{
+        String[] param = params.split("&");
+        for(String s : param){
+            String[] kv = s.split("=");
+            obj.put(kv[0], kv[1]);
         }
     }
 

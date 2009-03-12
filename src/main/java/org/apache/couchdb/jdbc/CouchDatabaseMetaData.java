@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package org.apache.couchdb.jdbc;
 
 import java.sql.Connection;
@@ -11,123 +10,156 @@ import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.util.Properties;
-import org.apache.http.HttpClientConnection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  *
  * @author root
  * @version 1.0
  */
-public class CouchDatabaseMetaData implements DatabaseMetaData{
+public class CouchDatabaseMetaData implements DatabaseMetaData {
 
-    private HttpClientConnection connection;
-    private Properties info;
+    private JSONObject info;
+    private String url;
 
-    public CouchDatabaseMetaData(HttpClientConnection connection, Properties info){
-        this.connection = connection;
+    public CouchDatabaseMetaData(JSONObject info, String url) {
         this.info = info;
+        this.url = url;
     }
 
+    @Override
     public boolean allProceduresAreCallable() throws SQLException {
         return false;
     }
 
+    @Override
     public boolean allTablesAreSelectable() throws SQLException {
         return true;
     }
 
+    @Override
     public String getURL() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return url;
     }
 
+    @Override
     public String getUserName() throws SQLException {
-        return info.getProperty("username");
+        return "";
     }
 
+    @Override
     public boolean isReadOnly() throws SQLException {
         return false;
     }
 
+    @Override
     public boolean nullsAreSortedHigh() throws SQLException {
         return false;
     }
 
+    @Override
     public boolean nullsAreSortedLow() throws SQLException {
         return false;
     }
 
+    @Override
     public boolean nullsAreSortedAtStart() throws SQLException {
         return false;
     }
 
+    @Override
     public boolean nullsAreSortedAtEnd() throws SQLException {
         return false;
     }
 
+    @Override
     public String getDatabaseProductName() throws SQLException {
         return "CouchDB";
     }
 
+    @Override
     public String getDatabaseProductVersion() throws SQLException {
-        return "0.8.1";
+        try {
+            return info.getString("version");
+        } catch (JSONException ex) {
+            throw new SQLException(ex);
+        }
     }
 
+    @Override
     public String getDriverName() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return "CouchDriver";
     }
 
+    @Override
     public String getDriverVersion() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return "1.0-snapshot";
     }
 
+    @Override
     public int getDriverMajorVersion() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return 1;
     }
 
+    @Override
     public int getDriverMinorVersion() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return 1;
     }
 
+    @Override
     public boolean usesLocalFiles() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return false;
     }
 
+    @Override
     public boolean usesLocalFilePerTable() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return false;
     }
 
+    @Override
     public boolean supportsMixedCaseIdentifiers() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public boolean storesUpperCaseIdentifiers() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public boolean storesLowerCaseIdentifiers() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public boolean storesMixedCaseIdentifiers() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public String getIdentifierQuoteString() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
@@ -136,34 +168,42 @@ public class CouchDatabaseMetaData implements DatabaseMetaData{
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public String getNumericFunctions() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public String getStringFunctions() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public String getSystemFunctions() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public String getTimeDateFunctions() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public String getSearchStringEscape() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public String getExtraNameCharacters() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public boolean supportsAlterTableWithAddColumn() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public boolean supportsAlterTableWithDropColumn() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
@@ -726,5 +766,4 @@ public class CouchDatabaseMetaData implements DatabaseMetaData{
     public boolean isWrapperFor(Class iface) throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
 }

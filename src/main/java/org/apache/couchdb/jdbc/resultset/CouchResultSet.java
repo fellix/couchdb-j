@@ -40,12 +40,14 @@ public class CouchResultSet implements ResultSet{
     private JSONObject object;
     private CouchStatement smt;
     private String sql;
+    private String url;
 
-    public CouchResultSet(String entity, CouchStatement smt, String sql) throws SQLException{
+    public CouchResultSet(String entity, CouchStatement smt, String sql, String url) throws SQLException{
         try {
             object = new JSONObject(entity);
             this.smt = smt;
             this.sql = sql;
+            this.url = url;
         } catch (JSONException ex) {
             new SQLException(ex);
         }
@@ -468,7 +470,7 @@ public class CouchResultSet implements ResultSet{
         try {
             object.put(columnLabel, x);
             System.out.println(sql+columnLabel+"="+x);
-            smt.executeUpdate(sql);
+            smt.executeUpdate(sql+"#"+columnLabel+"="+x);
         } catch (JSONException ex) {
             throw new SQLException(ex);
         }
