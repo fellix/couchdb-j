@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package org.apache.couchdb.jdbc.util;
 
 import java.util.ArrayList;
@@ -25,19 +24,21 @@ public class Converter {
      * @return array of nameValuePair
      * @throws org.json.JSONException
      */
-    public static NameValuePair[] jsonToNameValuePair(JSONObject obj) throws JSONException{
-        if(obj == null){
+    public static NameValuePair[] jsonToNameValuePair(JSONObject obj) throws JSONException {
+        if (obj == null) {
             throw new JSONException("Couldn't convert an null object");
         }
         List<NameValuePair> list = new ArrayList<NameValuePair>();
         Iterator<String> it = obj.keys();
-        while(it.hasNext()){
+        while (it.hasNext()) {
             String key = it.next();
-            Object value = obj.get(key);
-            list.add(new NameValuePair(key, value.toString()));
+            if (!key.equals("_id") && !key.equals("_rev")) {
+                Object value = obj.get(key);
+                list.add(new NameValuePair(key, value.toString()));
+            }
         }
         NameValuePair[] array = new NameValuePair[list.size()];
-        for(int i = 0; i < list.size(); i++){
+        for (int i = 0; i < list.size(); i++) {
             array[i] = list.get(i);
         }
         return array;

@@ -55,7 +55,7 @@ public class CouchConnection implements Connection {
      */
     public CouchConnection(Properties info) throws SQLException {
         baseUrl = "http://".concat(info.getProperty("host")).concat(":").concat(info.getProperty("port"));
-        con = new HttpClient();
+        con = HttpClientUtil.getInstance().getClient();
         HttpMethod getInfo = new GetMethod(baseUrl);
         try {
             int statusCode = con.executeMethod(getInfo);

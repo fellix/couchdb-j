@@ -15,10 +15,12 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.commons.httpclient.methods.RequestEntity;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.couchdb.jdbc.HttpClientUtil;
 import org.apache.couchdb.jdbc.resultset.CouchResultSet;
-import org.apache.couchdb.jdbc.util.Converter;
+import org.apache.couchdb.jdbc.util.StringConstants;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -32,6 +34,7 @@ public class CouchStatement implements Statement {
     protected String url;
     private ResultSet resultSet;
     private HttpClient con;
+    private JSONObject dbStatus;
 
     /**
      * Defaults constructor
@@ -39,49 +42,8 @@ public class CouchStatement implements Statement {
      * @since 1.0
      */
     public CouchStatement(String url) {
-        con = new HttpClient();
+        con = HttpClientUtil.getInstance().getClient();
         this.url = url;
-    }
-
-    /**
-     * Execute an HTTP method.
-     * @param method the method
-     * @param sql the string to execute
-     * @return Response of the server
-     * @throws java.sql.SQLException
-     * @see CouchDBHttp
-     * @since 1.0
-     *
-    private HttpResponse executeHttp(String method, String sql) throws SQLException {
-    return executeHttp(method, sql, false);
-    }
-
-    /**
-     * Execute an HTTP Metodo using an entity
-     * @param method
-     * @param sql
-     * @param entity
-     * @return
-     * @throws java.sql.SQLException
-     *
-    private HttpResponse executeHttp(String method, String sql, boolean sender) throws SQLException {
-    HttpRequest request = new BasicHttpRequest(method, sql);
-    request.setParams(http.getDefaultParams());
-    if(sender){
-    request.addHeader(new BasicHeader("teste", "editado"));
-    }
-    HttpRequestExecutor executor = new HttpRequestExecutor();
-    try {
-    executor.preProcess(request, http.getDefaultProcessor(), http.getDefaultContext());
-    HttpResponse response = executor.execute(request, connection, http.getDefaultContext());
-    response.setParams(http.getDefaultParams());
-    executor = null;
-    return response;
-    } catch (HttpException ex) {
-    throw new SQLException(ex);
-    } catch (IOException ex) {
-    throw new SQLException(ex);
-    }
     }
 
     /**
@@ -113,7 +75,7 @@ public class CouchStatement implements Statement {
         try {
             int statusCode = con.executeMethod(method);
             if (statusCode != HttpStatus.SC_OK) {
-                throw new SQLException("Invalid request!");
+                throw new SQLException("Invalid request! "+StringConstants.errorMessage(statusCode));
             }
             byte[] response = method.getResponseBody();
             return response;
@@ -149,11 +111,15 @@ public class CouchStatement implements Statement {
             JSONObject obj = new JSONObject(new String(response));
             //Sttrips the params to find the key and the value
             stripParams(splited[1], obj);
-            PutMethod post = new PutMethod(url.concat(base));
-            post.setQueryString(Converter.jsonToNameValuePair(obj));
-            int status = con.executeMethod(post);
-            if(status != HttpStatus.SC_OK){
-                throw new SQLException("Failed to update the object. Error Code: "+status);
+            PutMethod put = new PutMethod(url.concat(base));
+            put.setRequestHeader("Content-Type", StringConstants.MIME_JSON);
+            RequestEntity entity = new StringRequestEntity(obj.toString(), StringConstants.MIME_JSON, "UTF-8");
+            put.setRequestEntity(entity);
+            
+            int status = con.executeMethod(put);
+            if(status != HttpStatus.SC_OK && status != 201){
+                throw new SQLException("Failed to update the object with the error code: "+
+                        status+". "+StringConstants.errorMessage(status));
             }
             return status;
         }catch (HttpException ex) {
