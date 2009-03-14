@@ -9,9 +9,20 @@ Java JDBC API implementation to connect to the CouchDB servers
 * Apache Http Core Components
 * CouchDB Server
 
+## Supported Data Types
+The data types is the data types supported by the JSON
+
+* Long
+* Integer
+* String
+* Object
+* Double
+* JSON Arrays can be used in the Object type
+
+
 ## TODO
 
 * Add Insert and Update the database
 * Finish the CouchDataBaseMetaData
-* Finish the CouchResultSetMetaData
-* Implements the CouchPreparedStatment.
+* Implements the CouchPreparedStatment
+* Supports JPA (Future releases)

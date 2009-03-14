@@ -83,7 +83,7 @@ public class CouchConnection implements Connection {
      */
     @Override
     public Statement createStatement() throws SQLException {
-        return new CouchStatement(baseUrl);
+        return new CouchStatement(baseUrl, this);
     }
 
     public PreparedStatement prepareStatement(String sql) throws SQLException {

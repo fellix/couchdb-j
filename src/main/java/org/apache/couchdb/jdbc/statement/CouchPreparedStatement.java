@@ -25,6 +25,7 @@ import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import org.apache.couchdb.jdbc.CouchConnection;
 
 /**
  *
@@ -33,8 +34,8 @@ import java.util.Calendar;
  */
 public class CouchPreparedStatement extends CouchStatement implements PreparedStatement{
 
-    public CouchPreparedStatement(String url){
-        super(url);
+    public CouchPreparedStatement(String url, CouchConnection connection){
+        super(url, connection);
     }
 
     public ResultSet executeQuery() throws SQLException {

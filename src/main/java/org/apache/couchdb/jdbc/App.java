@@ -22,10 +22,10 @@ public class App
             DatabaseMetaData dbData = con.getMetaData();
             System.out.println(dbData.getDatabaseProductName()+ " - "+dbData.getDatabaseProductVersion());
             Statement smt = con.createStatement();
-            ResultSet rs = smt.executeQuery("/test/jdbc");
-            System.out.println(rs.getBoolean("jdbc"));
-            rs.updateBoolean("jdbc", false);
-            System.out.println(rs.getBoolean("jdbc"));
+            //smt.execute("PUT /test/doc_id");
+            smt.execute("GET /");
+            ResultSet rs = smt.getResultSet();
+            System.out.println(rs.getString("couchdb"));
         } catch (ClassNotFoundException ex) {
             ex.printStackTrace();
         } catch (SQLException ex) {

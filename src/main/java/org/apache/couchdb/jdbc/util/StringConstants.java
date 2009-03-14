@@ -4,8 +4,6 @@
  */
 package org.apache.couchdb.jdbc.util;
 
-import org.apache.commons.httpclient.HttpStatus;
-
 /**
  * String constatns for the application
  * @author Rafael Felix
@@ -14,6 +12,12 @@ import org.apache.commons.httpclient.HttpStatus;
 public class StringConstants {
 
     public static final String MIME_JSON = "application/json";
+    public static final String CONTENT_TYPE = "UTF-8";
+
+    public static final String GET = "GET";
+    public static final String POST = "POST";
+    public static final String PUT = "PUT";
+    public static final String DELETE = "DELETE";
 
     public static String errorMessage(int error) {
         String msg = "";
@@ -46,4 +50,18 @@ public class StringConstants {
         }
         return msg;
     }
+    /**
+     * Capitalize an String
+     * @param s the String to capitalize
+     * @return the string capitalized
+     * @since 1.0
+     */
+    public static String capitalize(String s){
+        String first = s.substring(0, 1);
+        String last = s.substring(1, s.length());
+        first = first.toUpperCase();
+        last = last.toLowerCase();
+        return first.concat(last);
+    }
+
 }
