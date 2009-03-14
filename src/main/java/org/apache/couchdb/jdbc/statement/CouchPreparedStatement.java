@@ -34,8 +34,8 @@ import org.apache.couchdb.jdbc.CouchConnection;
  */
 public class CouchPreparedStatement extends CouchStatement implements PreparedStatement{
 
-    public CouchPreparedStatement(String url, CouchConnection connection){
-        super(url, connection);
+    public CouchPreparedStatement(CouchConnection connection){
+        super(connection);
     }
 
     public ResultSet executeQuery() throws SQLException {

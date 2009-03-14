@@ -31,7 +31,6 @@ public class CouchStatement implements Statement {
     protected String url;
     private ResultSet resultSet;
     private HttpClient con;
-    private JSONObject dbStatus;
     private CouchConnection connection;
     private HttpCaller caller;
 
@@ -41,11 +40,12 @@ public class CouchStatement implements Statement {
      * @param url the url of the connection
      * @since 1.0
      */
-    public CouchStatement(String url, CouchConnection connection) {
+    public CouchStatement(CouchConnection connection) {
         con = HttpClientUtil.getInstance().getClient();
-        this.url = url;
+        this.url = connection.getBaseUrl();
         this.connection = connection;
         caller = HttpCaller.getInstance();
+        caller.setServerUrl(url);
     }
 
     /**
@@ -398,5 +398,20 @@ public class CouchStatement implements Statement {
     public void setCursorName(String name) throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof CouchStatement){
+            CouchStatement other = (CouchStatement) obj;
+            try {
+                return other.getConnection().equals(getConnection());
+            } catch (SQLException ex) {
+                //nothing
+            }
+        }
+        return false;
+    }
+
+
 
 }

@@ -83,7 +83,7 @@ public class CouchConnection implements Connection {
      */
     @Override
     public Statement createStatement() throws SQLException {
-        return new CouchStatement(baseUrl, this);
+        return new CouchStatement(this);
     }
 
     public PreparedStatement prepareStatement(String sql) throws SQLException {
@@ -299,4 +299,13 @@ public class CouchConnection implements Connection {
     public boolean isWrapperFor(Class iface) throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public JSONObject getServerInfo() {
+        return serverInfo;
+    }
+
 }

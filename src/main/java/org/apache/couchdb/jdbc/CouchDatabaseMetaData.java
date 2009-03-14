@@ -9,7 +9,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.JSONException;
@@ -766,4 +765,26 @@ public class CouchDatabaseMetaData implements DatabaseMetaData {
     public boolean isWrapperFor(Class iface) throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof CouchDatabaseMetaData){
+            CouchDatabaseMetaData other = (CouchDatabaseMetaData) obj;
+            try {
+                return other.getInfo().equals(getInfo()) && other.getURL().equals(getURL());
+            } catch (SQLException ex) {
+                
+            }
+        }
+        return false;
+    }
+
+    public JSONObject getInfo() {
+        return info;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
 }
